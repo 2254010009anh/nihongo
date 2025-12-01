@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nihongo Flashcard - Học Tiếng Nhật</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🇯🇵 Nihongo Flashcard</h1>
+            <p class="subtitle">Học Tiếng Nhật Bằng Flashcard</p>
+        </header>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">1 / 10</span>
+        </div>
+
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <span class="card-label">Tiếng Nhật</span>
+                        <div class="japanese-text" id="japaneseText">こんにちは</div>
+                        <div class="romaji" id="romajiText">Konnichiwa</div>
+                    </div>
+                    <div class="flashcard-back">
+                        <span class="card-label">Tiếng Việt</span>
+                        <div class="vietnamese-text" id="vietnameseText">Xin chào</div>
+                        <div class="example" id="exampleText">
+                            <span class="example-label">Ví dụ:</span>
+                            <span id="exampleSentence">こんにちは、元気ですか？</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hint-text">
+            <span>👆 Nhấn vào thẻ để xem nghĩa</span>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-prev" id="prevBtn" onclick="prevCard()">
+                ← Trước
+            </button>
+            <button class="btn btn-shuffle" onclick="shuffleCards()">
+                🔀 Trộn
+            </button>
+            <button class="btn btn-next" id="nextBtn" onclick="nextCard()">
+                Tiếp →
+            </button>
+        </div>
+
+        <div class="category-selector">
+            <label for="category">Chọn chủ đề:</label>
+            <select id="category" onchange="changeCategory()">
+                <option value="greetings">Chào hỏi</option>
+                <option value="numbers">Số đếm</option>
+                <option value="colors">Màu sắc</option>
+                <option value="family">Gia đình</option>
+                <option value="food">Đồ ăn</option>
+            </select>
+        </div>
+
+        <footer>
+            <p>Nihongo Benkyoushimasu - がんばって！(Cố lên!)</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
