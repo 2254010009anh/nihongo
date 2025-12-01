@@ -67,18 +67,38 @@ let currentCards = [...flashcardData[currentCategory]];
 let currentIndex = 0;
 
 // DOM Elements
-const flashcard = document.getElementById('flashcard');
-const japaneseText = document.getElementById('japaneseText');
-const romajiText = document.getElementById('romajiText');
-const vietnameseText = document.getElementById('vietnameseText');
-const exampleSentence = document.getElementById('exampleSentence');
-const progressFill = document.getElementById('progressFill');
-const progressText = document.getElementById('progressText');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
+let flashcard, japaneseText, romajiText, vietnameseText, exampleSentence, progressFill, progressText, prevBtn, nextBtn;
+
+// Flag to prevent double initialization
+let initialized = false;
+
+// Initialize DOM elements
+function initDOMElements() {
+    flashcard = document.getElementById('flashcard');
+    japaneseText = document.getElementById('japaneseText');
+    romajiText = document.getElementById('romajiText');
+    vietnameseText = document.getElementById('vietnameseText');
+    exampleSentence = document.getElementById('exampleSentence');
+    progressFill = document.getElementById('progressFill');
+    progressText = document.getElementById('progressText');
+    prevBtn = document.getElementById('prevBtn');
+    nextBtn = document.getElementById('nextBtn');
+    
+    // Check if all required elements are found
+    if (!flashcard || !japaneseText || !romajiText || !vietnameseText || 
+        !exampleSentence || !progressFill || !progressText || !prevBtn || !nextBtn) {
+        console.error('Required DOM elements not found');
+        return false;
+    }
+    return true;
+}
 
 // Initialize the app
 function init() {
+    if (initialized) return;
+    if (!initDOMElements()) return;
+    initialized = true;
+    
     updateCard();
     updateProgress();
     updateButtons();
