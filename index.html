@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thử Thách Từ Vựng Nhật Bản - Time Attack</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+            /* Chống bôi đen copy */
+        }
+
+        .game-container {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        /* Màn hình */
+        .screen {
+            display: none;
+        }
+
+        .active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Timer Bar */
+        .timer-container {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ff4757);
+            transform-origin: left;
+            /* Animation sẽ được xử lý bằng JS để đồng bộ thời gian thực */
+        }
+
+        /* Câu hỏi */
+        .question-box {
+            margin: 20px 0;
+        }
+
+        .question-word {
+            font-size: 2.8em;
+            font-weight: bold;
+            color: #2f3542;
+        }
+
+        .question-sub {
+            color: #a4b0be;
+            font-size: 1.2em;
+        }
+
+        /* Các nút chọn */
+        .options-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .btn-option {
+            background: #fff;
+            border: 2px solid #dfe4ea;
+            padding: 15px;
+            font-size: 1.2em;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-weight: 500;
+            color: #57606f;
+        }
+
+        .btn-option:active {
+            background: #dfe4ea;
+            transform: scale(0.98);
+        }
+
+        /* Màu khi chọn đúng/sai (hiệu ứng tức thời) */
+        .btn-correct {
+            background-color: #2ed573 !important;
+            color: white !important;
+            border-color: #2ed573 !important;
+        }
+
+        .btn-wrong {
+            background-color: #ff4757 !important;
+            color: white !important;
+            border-color: #ff4757 !important;
+        }
+
+        .btn-start,
+        .btn-restart {
+            background: #3742fa;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(55, 66, 250, 0.3);
+        }
+
+        .score-display {
+            font-size: 3.5em;
+            color: #3742fa;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .score-floating {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            color: #2ed573;
+            font-weight: bold;
+            font-size: 1.5em;
+            opacity: 0;
+            transform: translateY(0);
+            transition: all 0.5s;
+        }
+
+        .score-floating.show {
+            opacity: 1;
+            transform: translateY(-20px);
+        }
+
+        .stats {
+            margin-top: 15px;
+            color: #747d8c;
+            line-height: 1.6;
+        }
+
+        .top-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #747d8c;
+            margin-bottom: 5px;
+        }
+
+        /* Combo Style */
+        .combo-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #ff9f43;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .combo-active {
+            opacity: 1;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from {
+                transform: translateX(-50%) scale(1);
+            }
+
+            to {
+                transform: translateX(-50%) scale(1.1);
+            }
+        }
+
+        .high-score-label {
+            background: #ffeaa7;
+            color: #d35400;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        /* Topic Selection */
+        .topic-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-topic {
+            background: #f1f2f6;
+            border: 2px solid #dfe4ea;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9em;
+            color: #747d8c;
+            transition: all 0.2s;
+        }
+
+        .btn-topic.active {
+            background: #3742fa;
+            color: white;
+            border-color: #3742fa;
+        }
+
+        /* Romaji Style */
+        .question-romaji {
+            color: #a4b0be;
+            font-size: 1em;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Flashcard Screen */
+        .flashcard-container {
+            margin: 20px 0;
+            min-height: 300px;
+        }
+
+        .flashcard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .flashcard:active {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front,
+        .flashcard-back {
+            backface-visibility: hidden;
+            position: absolute;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-japanese {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .flashcard-romaji {
+            font-size: 1.2em;
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        .flashcard-vietnamese {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .flashcard-topic {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        .flashcard-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn-flashcard {
+            background: #f1f2f6;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            color: #2f3542;
+            transition: all 0.2s;
+        }
+
+        .btn-flashcard:hover {
+            background: #dfe4ea;
+            transform: scale(1.05);
+        }
+
+        .flashcard-progress {
+            font-size: 0.9em;
+            color: #747d8c;
+            margin-top: 15px;
+        }
+
+        .btn-mode {
+            background: #2ed573;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(46, 213, 115, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="game-container">
+        <div id="score-popup" class="score-floating">+100</div>
+
+        <div id="start-screen" class="screen active">
+            <div id="high-score-display" class="high-score-label">🏆 Kỷ lục: 0</div>
+            <h1 style="color:#3742fa">Vua Tốc Độ Nhật Ngữ</h1>
+
+            <div class="topic-selector">
+                <button class="btn-topic active" onclick="selectTopic('all', this)">Tất cả</button>
+                <button class="btn-topic" onclick="selectTopic('N5', this)">N5 (Tất cả)</button>
+                <button class="btn-topic" onclick="selectTopic('N5-1', this)">N5-1</button>
+                <button class="btn-topic" onclick="selectTopic('N5-2', this)">N5-2</button>
+                <button class="btn-topic" onclick="selectTopic('N5-3', this)">N5-3</button>
+                <button class="btn-topic" onclick="selectTopic('N5-4', this)">N5-4</button>
+                <button class="btn-topic" onclick="selectTopic('N5-5', this)">N5-5</button>
+                <button class="btn-topic" onclick="selectTopic('N5-6', this)">N5-6</button>
+                <button class="btn-topic" onclick="selectTopic('N5-7', this)">N5-7</button>
+                <button class="btn-topic" onclick="selectTopic('N5-8', this)">N5-8</button>
+                <button class="btn-topic" onclick="selectTopic('N5-9', this)">N5-9</button>
+                <button class="btn-topic" onclick="selectTopic('N5-10', this)">N5-10</button>
+                <button class="btn-topic" onclick="selectTopic('N5-11', this)">N5-11</button>
+                <button class="btn-topic" onclick="selectTopic('N5-12', this)">N5-12</button>
+                <button class="btn-topic" onclick="selectTopic('N5-13', this)">N5-13</button>
+                <button class="btn-topic" onclick="selectTopic('N5-14', this)">N5-14</button>
+                <button class="btn-topic" onclick="selectTopic('N5-15', this)">N5-15</button>
+                <button class="btn-topic" onclick="selectTopic('N5-16', this)">N5-16</button>
+                <button class="btn-topic" onclick="selectTopic('N5-17', this)">N5-17</button>
+                <button class="btn-topic" onclick="selectTopic('N5-18', this)">N5-18</button>
+                <button class="btn-topic" onclick="selectTopic('N5-19', this)">N5-19</button>
+                <button class="btn-topic" onclick="selectTopic('N5-20', this)">N5-20</button>
+                <button class="btn-topic" onclick="selectTopic('N5-21', this)">N5-21</button>
+                <button class="btn-topic" onclick="selectTopic('N5-22', this)">N5-22</button>
+                <button class="btn-topic" onclick="selectTopic('N5-23', this)">N5-23</button>
+                <button class="btn-topic" onclick="selectTopic('N5-24', this)">N5-24</button>
+                <button class="btn-topic" onclick="selectTopic('N5-25', this)">N5-25</button>
+                <button class="btn-topic" onclick="selectTopic('body', this)">Cơ thể</button>
+                <button class="btn-topic" onclick="selectTopic('family', this)">Gia đình</button>
+                <button class="btn-topic" onclick="selectTopic('numbers', this)">Số đếm</button>
+                <button class="btn-topic" onclick="selectTopic('food', this)">Món ăn</button>
+                <button class="btn-topic" onclick="selectTopic('greetings', this)">Chào hỏi</button>
+            </div>
+
+            <p>⏱️ 5 giây / câu</p>
+            <p>⚡ Trả lời càng nhanh - Điểm càng cao</p>
+            <p>📝 <span id="question-count-display">30</span> câu ngẫu nhiên</p>
+            <button class="btn-mode" onclick="openFlashcard()">📚 Học Flashcard</button>
+            <button class="btn-start" onclick="startGame()">VÀO THI ĐẤU</button>
+        </div>
+
+        <div id="flashcard-screen" class="screen">
+            <h2>📚 Chế Độ Flashcard</h2>
+            <div class="flashcard-progress">
+                Thẻ <span id="flashcard-index">1</span>/<span id="flashcard-total">0</span>
+            </div>
+
+            <div class="flashcard-container">
+                <div class="flashcard" onclick="flipCard(this)">
+                    <div class="flashcard-front">
+                        <div class="flashcard-japanese" id="fc-japanese">Senaka</div>
+                        <div class="flashcard-romaji" id="fc-romaji">(senaka)</div>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="flashcard-vietnamese" id="fc-vietnamese">Lưng</div>
+                        <div class="flashcard-topic" id="fc-topic">Cơ thể</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flashcard-controls">
+                <button class="btn-flashcard" onclick="prevCard()">⬅️ Trước</button>
+                <button class="btn-flashcard" onclick="speakCurrentCard()">🔊 Đọc lại</button>
+                <button class="btn-flashcard" onclick="shuffleCards()">🔀 Xáo</button>
+                <button class="btn-flashcard" onclick="nextCard()">Sau ➡️</button>
+            </div>
+
+            <button class="btn-restart" onclick="backToMenu()">Về Menu</button>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <div class="top-info">
+                <span>Câu: <b id="q-index">1</b>/<span id="total-rounds-display">30</span></span>
+                <span>Điểm: <b id="current-score">0</b></span>
+            </div>
+            <button id="speech-toggle" onclick="toggleSpeech()"
+                style="position:absolute; top:45px; right:15px; background:transparent; border:none; font-size:1.5em; cursor:pointer;"
+                title="Bật/Tắt đọc từ">🔊</button>
+            <div id="combo-display" class="combo-container">Combo x0 🔥</div>
+
+            <div class="timer-container">
+                <div id="timer-bar" class="timer-bar"></div>
+            </div>
+
+            <div class="question-box">
+                <div id="question-text" class="question-word">Senaka</div>
+                <div id="question-romaji" class="question-romaji">(senaka)</div>
+            </div>
+
+            <div id="options-container" class="options-grid">
+            </div>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <h2>Kết Quả Chung Cuộc</h2>
+            <div style="font-size:0.9em; color:#888;">Tổng điểm đạt được</div>
+            <div id="final-score" class="score-display">0</div>
+
+            <div class="stats">
+                <div>✅ Chính xác: <span id="correct-count">0</span>/<span id="final-total-display">30</span></div>
+                <div>⚡ Tốc độ trung bình: <span id="avg-time">0</span>s</div>
+                <div id="rating-text" style="margin-top:10px; font-weight:bold; color:#3742fa"></div>
+            </div>
+            <button class="btn-restart" onclick="backToMenu()">Về Menu</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 0. AUDIO SYSTEM ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        // --- TEXT TO SPEECH (Đọc từ tiếng Nhật) ---
+        let isSpeechEnabled = true;
+        const synth = window.speechSynthesis;
+
+        function speakJapanese(text) {
+            if (!isSpeechEnabled || !synth) return;
+
+            // Hủy bỏ các utterance đang chờ
+            synth.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ja-JP'; // Tiếng Nhật
+            utterance.rate = 0.9; // Tốc độ đọc (0.1 - 10)
+            utterance.pitch = 1; // Cao độ giọng (0 - 2)
+            utterance.volume = 0.8; // Âm lượng (0 - 1)
+
+            synth.speak(utterance);
+        }
+
+        function toggleSpeech() {
+            isSpeechEnabled = !isSpeechEnabled;
+            const btn = document.getElementById('speech-toggle');
+            if (btn) {
+                btn.innerText = isSpeechEnabled ? '🔊 Bật âm' : '🔇 Tắt âm';
+            }
+            playClickSound();
+        }
+
+        function playCorrectSound() {
+            // Âm thanh vui vẻ khi đúng (C-E-G chord arpeggio)
+            const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+            notes.forEach((freq, i) => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.frequency.value = freq;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.05 + 0.3);
+
+                oscillator.start(audioCtx.currentTime + i * 0.05);
+                oscillator.stop(audioCtx.currentTime + i * 0.05 + 0.3);
+            });
+        }
+
+        function playWrongSound() {
+            // Âm thanh buồn khi sai (descending notes)
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function playComboSound(comboLevel) {
+            // Âm thanh đặc biệt cho combo cao
+            if (comboLevel < 3) return;
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playClickSound() {
+            // Âm thanh nhẹ khi click nút
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 800;
+
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.05);
+        }
+
+        // --- 1. NGÂN HÀNG TỪ VỰNG FULL ---
+        const vocabulary = [
+            // Hình 1 (Cơ thể 1)
+            { jap: "背中", romaji: "senaka", viet: "Lưng", topic: "body" },
+            { jap: "胸", romaji: "mune", viet: "Ngực", topic: "body" },
+            { jap: "肘", romaji: "hiji", viet: "Khuỷu tay", topic: "body" },
+            { jap: "こめかみ", romaji: "komekami", viet: "Thái dương", topic: "body" },
+            { jap: "腰", romaji: "koshi", viet: "Hông / Eo", topic: "body" },
+            { jap: "足", romaji: "ashi", viet: "Chân", topic: "body" },
+            { jap: "踵", romaji: "kakato", viet: "Gót chân", topic: "body" },
+            { jap: "お腹", romaji: "onaka", viet: "Bụng", topic: "body" },
+            { jap: "膝", romaji: "hiza", viet: "Đầu gối", topic: "body" },
+            { jap: "爪", romaji: "tsume", viet: "Móng tay", topic: "body" },
+            { jap: "指", romaji: "yubi", viet: "Ngón tay", topic: "body" },
+            { jap: "髪の毛", romaji: "kaminoke", viet: "Tóc", topic: "body" },
+
+            // Hình 2 (Cơ thể 2 & Mặt)
+            { jap: "頭", romaji: "atama", viet: "Đầu", topic: "body" },
+            { jap: "顔", romaji: "kao", viet: "Mặt", topic: "body" },
+            { jap: "耳", romaji: "mimi", viet: "Tai", topic: "body" },
+            { jap: "目", romaji: "me", viet: "Mắt", topic: "body" },
+            { jap: "鼻", romaji: "hana", viet: "Mũi", topic: "body" },
+            { jap: "口", romaji: "kuchi", viet: "Miệng", topic: "body" },
+            { jap: "歯", romaji: "ha", viet: "Răng", topic: "body" },
+            { jap: "額", romaji: "hitai", viet: "Trán", topic: "body" },
+            { jap: "首", romaji: "kubi", viet: "Cổ", topic: "body" },
+            { jap: "肩", romaji: "kata", viet: "Vai", topic: "body" },
+            { jap: "腕", romaji: "ude", viet: "Cánh tay", topic: "body" },
+            { jap: "手", romaji: "te", viet: "Tay", topic: "body" },
+
+            // Gia đình
+            { jap: "家族", romaji: "kazoku", viet: "Gia đình", topic: "family" },
+            { jap: "父", romaji: "chichi", viet: "Bố (của mình)", topic: "family" },
+            { jap: "母", romaji: "haha", viet: "Mẹ (của mình)", topic: "family" },
+            { jap: "兄", romaji: "ani", viet: "Anh trai (của mình)", topic: "family" },
+            { jap: "姉", romaji: "ane", viet: "Chị gái (của mình)", topic: "family" },
+            { jap: "弟", romaji: "otouto", viet: "Em trai (của mình)", topic: "family" },
+            { jap: "妹", romaji: "imouto", viet: "Em gái (của mình)", topic: "family" },
+            { jap: "祖父", romaji: "sofu", viet: "Ông (của mình)", topic: "family" },
+            { jap: "祖母", romaji: "sobo", viet: "Bà (của mình)", topic: "family" },
+
+            // Số đếm
+            { jap: "零", romaji: "zero/rei", viet: "Số 0", topic: "numbers" },
+            { jap: "一", romaji: "ichi", viet: "Số 1", topic: "numbers" },
+            { jap: "二", romaji: "ni", viet: "Số 2", topic: "numbers" },
+            { jap: "三", romaji: "san", viet: "Số 3", topic: "numbers" },
+            { jap: "四", romaji: "yon/shi", viet: "Số 4", topic: "numbers" },
+            { jap: "五", romaji: "go", viet: "Số 5", topic: "numbers" },
+            { jap: "六", romaji: "roku", viet: "Số 6", topic: "numbers" },
+            { jap: "七", romaji: "nana/shichi", viet: "Số 7", topic: "numbers" },
+            { jap: "八", romaji: "hachi", viet: "Số 8", topic: "numbers" },
+            { jap: "九", romaji: "kyuu/ku", viet: "Số 9", topic: "numbers" },
+            { jap: "十", romaji: "juu", viet: "Số 10", topic: "numbers" },
+
+            // Món ăn
+            { jap: "ご飯", romaji: "gohan", viet: "Cơm", topic: "food" },
+            { jap: "パン", romaji: "pan", viet: "Bánh mì", topic: "food" },
+            { jap: "卵", romaji: "tamago", viet: "Trứng", topic: "food" },
+            { jap: "肉", romaji: "niku", viet: "Thịt", topic: "food" },
+            { jap: "魚", romaji: "sakana", viet: "Cá", topic: "food" },
+            { jap: "野菜", romaji: "yasai", viet: "Rau", topic: "food" },
+            { jap: "果物", romaji: "kudamono", viet: "Hoa quả", topic: "food" },
+            { jap: "水", romaji: "mizu", viet: "Nước", topic: "food" },
+            { jap: "お茶", romaji: "ocha", viet: "Trà", topic: "food" },
+            { jap: "牛乳", romaji: "gyuunyuu", viet: "Sữa", topic: "food" },
+
+            // Chào hỏi & Giao tiếp
+            { jap: "おはよう", romaji: "ohayou", viet: "Chào buổi sáng", topic: "greetings" },
+            { jap: "こんにちは", romaji: "konnichiwa", viet: "Chào buổi chiều", topic: "greetings" },
+            { jap: "こんばんは", romaji: "konbanwa", viet: "Chào buổi tối", topic: "greetings" },
+            { jap: "さようなら", romaji: "sayounara", viet: "Tạm biệt", topic: "greetings" },
+            { jap: "ありがとう", romaji: "arigatou", viet: "Cảm ơn", topic: "greetings" },
+            { jap: "すみません", romaji: "sumimasen", viet: "Xin lỗi / Làm ơn", topic: "greetings" },
+            { jap: "はい", romaji: "hai", viet: "Vâng / Có", topic: "greetings" },
+            { jap: "いいえ", romaji: "iie", viet: "Không", topic: "greetings" },
+
+            // Minna no Nihongo N5 - Bài 1
+            { jap: "わたし", romaji: "watashi", viet: "Tôi", topic: "N5-1" },
+            { jap: "あなた", romaji: "anata", viet: "Bạn", topic: "N5-1" },
+            { jap: "あの人", romaji: "ano hito", viet: "Người đó", topic: "N5-1" },
+            { jap: "学生", romaji: "gakusei", viet: "Sinh viên", topic: "N5-1" },
+            { jap: "会社員", romaji: "kaishain", viet: "Nhân viên công ty", topic: "N5-1" },
+            { jap: "教師", romaji: "kyoushi", viet: "Giáo viên", topic: "N5-1" },
+            { jap: "医者", romaji: "isha", viet: "Bác sĩ", topic: "N5-1" },
+            { jap: "日本人", romaji: "nihonjin", viet: "Người Nhật", topic: "N5-1" },
+            { jap: "中国人", romaji: "chuugokujin", viet: "Người Trung Quốc", topic: "N5-1" },
+            { jap: "韓国人", romaji: "kankokujin", viet: "Người Hàn Quốc", topic: "N5-1" },
+            { jap: "アメリカ人", romaji: "amerikajin", viet: "Người Mỹ", topic: "N5-1" },
+            { jap: "イギリス人", romaji: "igirisujin", viet: "Người Anh", topic: "N5-1" },
+            { jap: "フランス人", romaji: "furansujin", viet: "Người Pháp", topic: "N5-1" },
+            { jap: "ドイツ人", romaji: "doitsujin", viet: "Người Đức", topic: "N5-1" },
+            // Minna no Nihongo N5 - Bài 2 (Đồ vật, số đếm)
+            { jap: "これ", romaji: "kore", viet: "Cái này", topic: "N5-2" },
+            { jap: "それ", romaji: "sore", viet: "Cái đó", topic: "N5-2" },
+            { jap: "あれ", romaji: "are", viet: "Cái kia", topic: "N5-2" },
+            { jap: "どれ", romaji: "dore", viet: "Cái nào", topic: "N5-2" },
+            { jap: "だれ", romaji: "dare", viet: "Ai", topic: "N5-2" },
+            { jap: "何", romaji: "nani", viet: "Cái gì", topic: "N5-2" },
+            { jap: "本", romaji: "hon", viet: "Sách", topic: "N5-2" },
+            { jap: "辞書", romaji: "jisho", viet: "Từ điển", topic: "N5-2" },
+            { jap: "雑誌", romaji: "zasshi", viet: "Tạp chí", topic: "N5-2" },
+            { jap: "新聞", romaji: "shinbun", viet: "Báo", topic: "N5-2" },
+            { jap: "ノート", romaji: "nooto", viet: "Vở", topic: "N5-2" },
+            { jap: "手帳", romaji: "techou", viet: "Sổ tay", topic: "N5-2" },
+            { jap: "名刺", romaji: "meishi", viet: "Danh thiếp", topic: "N5-2" },
+            { jap: "カード", romaji: "kaado", viet: "Thẻ", topic: "N5-2" },
+            { jap: "テレホンカード", romaji: "terefon kaado", viet: "Thẻ điện thoại", topic: "N5-2" },
+            { jap: "鉛筆", romaji: "enpitsu", viet: "Bút chì", topic: "N5-2" },
+            { jap: "ボールペン", romaji: "booru pen", viet: "Bút bi", topic: "N5-2" },
+            { jap: "シャープペンシル", romaji: "shaapu penshiru", viet: "Bút chì bấm", topic: "N5-2" },
+            { jap: "消しゴム", romaji: "keshigomu", viet: "Cục tẩy", topic: "N5-2" },
+            { jap: "定規", romaji: "jougi", viet: "Thước kẻ", topic: "N5-2" },
+            { jap: "はさみ", romaji: "hasami", viet: "Kéo", topic: "N5-2" },
+            { jap: "ホッチキス", romaji: "hotchikisu", viet: "Dập ghim", topic: "N5-2" },
+            { jap: "テープ", romaji: "teepu", viet: "Băng dính", topic: "N5-2" },
+            { jap: "セロテープ", romaji: "sero teepu", viet: "Băng dính trong", topic: "N5-2" },
+            { jap: "時計", romaji: "tokei", viet: "Đồng hồ", topic: "N5-2" },
+            { jap: "カメラ", romaji: "kamera", viet: "Máy ảnh", topic: "N5-2" },
+            { jap: "コンピューター", romaji: "konpyuutaa", viet: "Máy tính", topic: "N5-2" },
+            { jap: "テレビ", romaji: "terebi", viet: "Ti vi", topic: "N5-2" },
+            { jap: "ラジオ", romaji: "rajio", viet: "Ra-đi-ô", topic: "N5-2" },
+            { jap: "カセットテープ", romaji: "kasetto teepu", viet: "Băng cát-xét", topic: "N5-2" },
+            { jap: "車", romaji: "kuruma", viet: "Xe ô tô", topic: "N5-2" },
+            { jap: "自転車", romaji: "jitensha", viet: "Xe đạp", topic: "N5-2" },
+            { jap: "机", romaji: "tsukue", viet: "Bàn", topic: "N5-2" },
+            { jap: "椅子", romaji: "isu", viet: "Ghế", topic: "N5-2" },
+            { jap: "チョコレート", romaji: "chokoreeto", viet: "Sô-cô-la", topic: "N5-2" },
+            { jap: "コーヒー", romaji: "koohii", viet: "Cà phê", topic: "N5-2" },
+            { jap: "英語", romaji: "eigo", viet: "Tiếng Anh", topic: "N5-2" },
+            { jap: "日本語", romaji: "nihongo", viet: "Tiếng Nhật", topic: "N5-2" },
+            { jap: "～語", romaji: "~go", viet: "Tiếng ~", topic: "N5-2" },
+            
+            // Minna no Nihongo N5 - Bài 3 (Địa điểm)
+            { jap: "ここ", romaji: "koko", viet: "Ở đây", topic: "N5-3" },
+            { jap: "そこ", romaji: "soko", viet: "Ở đó", topic: "N5-3" },
+            { jap: "あそこ", romaji: "asoko", viet: "Ở đằng kia", topic: "N5-3" },
+            { jap: "どこ", romaji: "doko", viet: "Ở đâu", topic: "N5-3" },
+            { jap: "こちら", romaji: "kochira", viet: "Đây / Phía này", topic: "N5-3" },
+            { jap: "そちら", romaji: "sochira", viet: "Đó / Phía đó", topic: "N5-3" },
+            { jap: "あちら", romaji: "achira", viet: "Đằng kia / Phía kia", topic: "N5-3" },
+            { jap: "どちら", romaji: "dochira", viet: "Phía nào", topic: "N5-3" },
+            { jap: "店", romaji: "mise", viet: "Cửa hàng", topic: "N5-3" },
+            { jap: "食堂", romaji: "shokudou", viet: "Căn tin", topic: "N5-3" },
+            { jap: "銀行", romaji: "ginkou", viet: "Ngân hàng", topic: "N5-3" },
+            { jap: "郵便局", romaji: "yuubinkyoku", viet: "Bưu điện", topic: "N5-3" },
+            { jap: "図書館", romaji: "toshokan", viet: "Thư viện", topic: "N5-3" },
+            { jap: "病院", romaji: "byouin", viet: "Bệnh viện", topic: "N5-3" },
+            { jap: "デパート", romaji: "depaato", viet: "Bách hóa", topic: "N5-3" },
+            { jap: "学校", romaji: "gakkou", viet: "Trường học", topic: "N5-3" },
+            { jap: "駅", romaji: "eki", viet: "Ga tàu", topic: "N5-3" },
+            { jap: "空港", romaji: "kuukou", viet: "Sân bay", topic: "N5-3" },
+            { jap: "喫茶店", romaji: "kissaten", viet: "Quán cà phê", topic: "N5-3" },
+            { jap: "ビル", romaji: "biru", viet: "Tòa nhà", topic: "N5-3" },
+            { jap: "ホテル", romaji: "hoteru", viet: "Khách sạn", topic: "N5-3" },
+            { jap: "駅前", romaji: "ekimae", viet: "Trước ga", topic: "N5-3" },
+            
+            // Minna no Nihongo N5 - Bài 4 (Thời gian)
+            { jap: "今", romaji: "ima", viet: "Bây giờ", topic: "N5-4" },
+            { jap: "時", romaji: "ji", viet: "Giờ", topic: "N5-4" },
+            { jap: "分", romaji: "fun", viet: "Phút", topic: "N5-4" },
+            { jap: "半", romaji: "han", viet: "Rưỡi", topic: "N5-4" },
+            { jap: "昨日", romaji: "kinou", viet: "Hôm qua", topic: "N5-4" },
+            { jap: "今日", romaji: "kyou", viet: "Hôm nay", topic: "N5-4" },
+            { jap: "明日", romaji: "ashita", viet: "Ngày mai", topic: "N5-4" },
+            { jap: "月曜日", romaji: "getsuyoubi", viet: "Thứ Hai", topic: "N5-4" },
+            { jap: "火曜日", romaji: "kayoubi", viet: "Thứ Ba", topic: "N5-4" },
+            { jap: "水曜日", romaji: "suiyoubi", viet: "Thứ Tư", topic: "N5-4" },
+            { jap: "木曜日", romaji: "mokuyoubi", viet: "Thứ Năm", topic: "N5-4" },
+            { jap: "金曜日", romaji: "kin'youbi", viet: "Thứ Sáu", topic: "N5-4" },
+            { jap: "土曜日", romaji: "doyoubi", viet: "Thứ Bảy", topic: "N5-4" },
+            { jap: "日曜日", romaji: "nichiyoubi", viet: "Chủ Nhật", topic: "N5-4" },
+            { jap: "来週", romaji: "raishuu", viet: "Tuần sau", topic: "N5-4" },
+            { jap: "来月", romaji: "raigetsu", viet: "Tháng sau", topic: "N5-4" },
+            { jap: "来年", romaji: "rainen", viet: "Năm sau", topic: "N5-4" },
+            { jap: "午前", romaji: "gozen", viet: "Sáng (AM)", topic: "N5-4" },
+            { jap: "午後", romaji: "gogo", viet: "Chiều (PM)", topic: "N5-4" },
+            { jap: "朝", romaji: "asa", viet: "Buổi sáng", topic: "N5-4" },
+            { jap: "昼", romaji: "hiru", viet: "Buổi trưa", topic: "N5-4" },
+            { jap: "夜", romaji: "yoru", viet: "Buổi tối", topic: "N5-4" },
+            
+            // Minna no Nihongo N5 - Bài 5 (Di chuyển, phương tiện)
+            { jap: "行く", romaji: "iku", viet: "Đi", topic: "N5-5" },
+            { jap: "来る", romaji: "kuru", viet: "Đến", topic: "N5-5" },
+            { jap: "帰る", romaji: "kaeru", viet: "Về", topic: "N5-5" },
+            { jap: "地下鉄", romaji: "chikatetsu", viet: "Tàu điện ngầm", topic: "N5-5" },
+            { jap: "タクシー", romaji: "takushii", viet: "Taxi", topic: "N5-5" },
+            { jap: "飛行機", romaji: "hikouki", viet: "Máy bay", topic: "N5-5" },
+            { jap: "船", romaji: "fune", viet: "Tàu thủy", topic: "N5-5" },
+            { jap: "電車", romaji: "densha", viet: "Tàu điện", topic: "N5-5" },
+            { jap: "新幹線", romaji: "shinkansen", viet: "Tàu cao tốc", topic: "N5-5" },
+            { jap: "バス", romaji: "basu", viet: "Xe buýt", topic: "N5-5" },
+            { jap: "歩いて", romaji: "aruite", viet: "Đi bộ", topic: "N5-5" },
+            { jap: "スーパー", romaji: "suupaa", viet: "Siêu thị", topic: "N5-5" },
+            { jap: "エレベーター", romaji: "erebeetaa", viet: "Thang máy", topic: "N5-5" },
+            { jap: "エスカレーター", romaji: "esukareetaa", viet: "Thang cuốn", topic: "N5-5" },
+            { jap: "階段", romaji: "kaidan", viet: "Cầu thang", topic: "N5-5" },
+            { jap: "お手洗い", romaji: "otearai", viet: "Nhà vệ sinh", topic: "N5-5" },
+            { jap: "受付", romaji: "uketsuke", viet: "Lễ tân", topic: "N5-5" },
+            
+            // Minna no Nihongo N5 - Bài 6 (Hoạt động hàng ngày, động từ cơ bản)
+            { jap: "起きる", romaji: "okiru", viet: "Thức dậy", topic: "N5-6" },
+            { jap: "寝る", romaji: "neru", viet: "Ngủ", topic: "N5-6" },
+            { jap: "食べる", romaji: "taberu", viet: "Ăn", topic: "N5-6" },
+            { jap: "飲む", romaji: "nomu", viet: "Uống", topic: "N5-6" },
+            { jap: "見る", romaji: "miru", viet: "Xem", topic: "N5-6" },
+            { jap: "聞く", romaji: "kiku", viet: "Nghe", topic: "N5-6" },
+            { jap: "読む", romaji: "yomu", viet: "Đọc", topic: "N5-6" },
+            { jap: "書く", romaji: "kaku", viet: "Viết", topic: "N5-6" },
+            { jap: "買う", romaji: "kau", viet: "Mua", topic: "N5-6" },
+            { jap: "取る", romaji: "toru", viet: "Lấy", topic: "N5-6" },
+            { jap: "作る", romaji: "tsukuru", viet: "Làm", topic: "N5-6" },
+            { jap: "会う", romaji: "au", viet: "Gặp", topic: "N5-6" },
+            { jap: "わかる", romaji: "wakaru", viet: "Hiểu", topic: "N5-6" },
+            { jap: "ある", romaji: "aru", viet: "Có (vật)", topic: "N5-6" },
+            { jap: "いる", romaji: "iru", viet: "Có (người/động vật)", topic: "N5-6" },
+            
+            // Minna no Nihongo N5 - Bài 7 (Tính từ - Thích/ghét, khả năng)
+            { jap: "好き", romaji: "suki", viet: "Thích", topic: "N5-7" },
+            { jap: "嫌い", romaji: "kirai", viet: "Ghét", topic: "N5-7" },
+            { jap: "上手", romaji: "jouzu", viet: "Giỏi", topic: "N5-7" },
+            { jap: "下手", romaji: "heta", viet: "Kém", topic: "N5-7" },
+            { jap: "元気", romaji: "genki", viet: "Khỏe", topic: "N5-7" },
+            { jap: "忙しい", romaji: "isogashii", viet: "Bận", topic: "N5-7" },
+            { jap: "暇", romaji: "hima", viet: "Rảnh", topic: "N5-7" },
+            { jap: "きれい", romaji: "kirei", viet: "Đẹp / Sạch", topic: "N5-7" },
+            { jap: "静か", romaji: "shizuka", viet: "Yên tĩnh", topic: "N5-7" },
+            { jap: "にぎやか", romaji: "nigiyaka", viet: "Nhộn nhịp", topic: "N5-7" },
+            { jap: "有名", romaji: "yuumei", viet: "Nổi tiếng", topic: "N5-7" },
+            { jap: "親切", romaji: "shinsetsu", viet: "Tốt bụng", topic: "N5-7" },
+            { jap: "便利", romaji: "benri", viet: "Tiện lợi", topic: "N5-7" },
+            { jap: "複雑", romaji: "fukuzatsu", viet: "Phức tạp", topic: "N5-7" },
+            { jap: "簡単", romaji: "kantan", viet: "Đơn giản", topic: "N5-7" },
+            
+            // Minna no Nihongo N5 - Bài 8 (Tính từ - Kích thước, màu sắc)
+            { jap: "大きい", romaji: "ookii", viet: "To", topic: "N5-8" },
+            { jap: "小さい", romaji: "chiisai", viet: "Nhỏ", topic: "N5-8" },
+            { jap: "新しい", romaji: "atarashii", viet: "Mới", topic: "N5-8" },
+            { jap: "古い", romaji: "furui", viet: "Cũ", topic: "N5-8" },
+            { jap: "いい", romaji: "ii", viet: "Tốt", topic: "N5-8" },
+            { jap: "悪い", romaji: "warui", viet: "Xấu", topic: "N5-8" },
+            { jap: "暑い", romaji: "atsui", viet: "Nóng", topic: "N5-8" },
+            { jap: "寒い", romaji: "samui", viet: "Lạnh", topic: "N5-8" },
+            { jap: "熱い", romaji: "atsui", viet: "Nóng (đồ vật)", topic: "N5-8" },
+            { jap: "冷たい", romaji: "tsumetai", viet: "Lạnh (đồ vật)", topic: "N5-8" },
+            { jap: "難しい", romaji: "muzukashii", viet: "Khó", topic: "N5-8" },
+            { jap: "易しい", romaji: "yasashii", viet: "Dễ", topic: "N5-8" },
+            { jap: "楽しい", romaji: "tanoshii", viet: "Vui", topic: "N5-8" },
+            { jap: "悲しい", romaji: "kanashii", viet: "Buồn", topic: "N5-8" },
+            { jap: "面白い", romaji: "omoshiroi", viet: "Thú vị", topic: "N5-8" },
+            { jap: "おいしい", romaji: "oishii", viet: "Ngon", topic: "N5-8" },
+            { jap: "白い", romaji: "shiroi", viet: "Trắng", topic: "N5-8" },
+            { jap: "黒い", romaji: "kuroi", viet: "Đen", topic: "N5-8" },
+            { jap: "赤い", romaji: "akai", viet: "Đỏ", topic: "N5-8" },
+            { jap: "青い", romaji: "aoi", viet: "Xanh dương", topic: "N5-8" },
+            { jap: "黄色", romaji: "kiiro", viet: "Vàng", topic: "N5-8" },
+            { jap: "緑", romaji: "midori", viet: "Xanh lá", topic: "N5-8" },
+            { jap: "長い", romaji: "nagai", viet: "Dài", topic: "N5-8" },
+            { jap: "短い", romaji: "mijikai", viet: "Ngắn", topic: "N5-8" },
+            { jap: "明るい", romaji: "akarui", viet: "Sáng", topic: "N5-8" },
+            { jap: "暗い", romaji: "kurai", viet: "Tối", topic: "N5-8" },
+            { jap: "軽い", romaji: "karui", viet: "Nhẹ", topic: "N5-8" },
+            { jap: "重い", romaji: "omoi", viet: "Nặng", topic: "N5-8" },
+            { jap: "安い", romaji: "yasui", viet: "Rẻ", topic: "N5-8" },
+            { jap: "広い", romaji: "hiroi", viet: "Rộng", topic: "N5-8" },
+            { jap: "狭い", romaji: "semai", viet: "Hẹp", topic: "N5-8" },
+            { jap: "高い", romaji: "takai", viet: "Cao / Đắt", topic: "N5-8" },
+            { jap: "低い", romaji: "hikui", viet: "Thấp", topic: "N5-8" },
+            { jap: "厚い", romaji: "atsui", viet: "Dày", topic: "N5-8" },
+            { jap: "薄い", romaji: "usui", viet: "Mỏng", topic: "N5-8" },
+            { jap: "太い", romaji: "futoi", viet: "Béo / Thô", topic: "N5-8" },
+            { jap: "細い", romaji: "hosoi", viet: "Gầy / Mảnh", topic: "N5-8" },
+            { jap: "若い", romaji: "wakai", viet: "Trẻ", topic: "N5-8" },
+            { jap: "年寄り", romaji: "toshiyori", viet: "Già", topic: "N5-8" },
+            { jap: "優しい", romaji: "yasashii", viet: "Dịu dàng", topic: "N5-8" },
+            { jap: "厳しい", romaji: "kibishii", viet: "Nghiêm khắc", topic: "N5-8" },
+            { jap: "正しい", romaji: "tadashii", viet: "Đúng", topic: "N5-8" },
+            { jap: "間違う", romaji: "machigau", viet: "Sai", topic: "N5-8" },
+            { jap: "同じ", romaji: "onaji", viet: "Giống nhau", topic: "N5-8" },
+            { jap: "違う", romaji: "chigau", viet: "Khác", topic: "N5-8" },
+            { jap: "特別", romaji: "tokubetsu", viet: "Đặc biệt", topic: "N5-8" },
+            { jap: "普通", romaji: "futsuu", viet: "Bình thường", topic: "N5-8" },
+            { jap: "大切", romaji: "taisetsu", viet: "Quan trọng", topic: "N5-8" },
+            { jap: "必要", romaji: "hitsuyou", viet: "Cần thiết", topic: "N5-8" },
+            { jap: "大丈夫", romaji: "daijoubu", viet: "Ổn / Không sao", topic: "N5-8" },
+            { jap: "大変", romaji: "taihen", viet: "Vất vả", topic: "N5-8" },
+            { jap: "変", romaji: "hen", viet: "Lạ", topic: "N5-8" },
+            { jap: "急", romaji: "kyuu", viet: "Gấp", topic: "N5-8" },
+            { jap: "危ない", romaji: "abunai", viet: "Nguy hiểm", topic: "N5-8" },
+            { jap: "安全", romaji: "anzen", viet: "An toàn", topic: "N5-8" },
+            { jap: "寂しい", romaji: "sabishii", viet: "Cô đơn", topic: "N5-8" },
+            { jap: "うれしい", romaji: "ureshii", viet: "Vui mừng", topic: "N5-8" },
+            { jap: "困る", romaji: "komaru", viet: "Khó khăn", topic: "N5-8" },
+            { jap: "驚く", romaji: "odoroku", viet: "Ngạc nhiên", topic: "N5-8" },
+            { jap: "怒る", romaji: "okoru", viet: "Giận", topic: "N5-8" },
+            { jap: "笑う", romaji: "warau", viet: "Cười", topic: "N5-8" },
+            { jap: "泣く", romaji: "naku", viet: "Khóc", topic: "N5-8" },
+            { jap: "遊ぶ", romaji: "asobu", viet: "Chơi", topic: "N5-8" },
+            { jap: "勉強", romaji: "benkyou", viet: "Học", topic: "N5" },
+            { jap: "勉強する", romaji: "benkyou suru", viet: "Học", topic: "N5" },
+            { jap: "教える", romaji: "oshieru", viet: "Dạy", topic: "N5" },
+            { jap: "習う", romaji: "narau", viet: "Học (từ ai đó)", topic: "N5" },
+            { jap: "話す", romaji: "hanasu", viet: "Nói", topic: "N5" },
+            { jap: "言う", romaji: "iu", viet: "Nói", topic: "N5" },
+            { jap: "答える", romaji: "kotaeru", viet: "Trả lời", topic: "N5" },
+            { jap: "質問", romaji: "shitsumon", viet: "Câu hỏi", topic: "N5" },
+            { jap: "質問する", romaji: "shitsumon suru", viet: "Hỏi", topic: "N5" },
+            { jap: "聞く", romaji: "kiku", viet: "Nghe / Hỏi", topic: "N5" },
+            { jap: "電話", romaji: "denwa", viet: "Điện thoại", topic: "N5" },
+            { jap: "電話する", romaji: "denwa suru", viet: "Gọi điện", topic: "N5" },
+            { jap: "掛ける", romaji: "kakeru", viet: "Treo / Gọi (điện thoại)", topic: "N5" },
+            { jap: "手紙", romaji: "tegami", viet: "Thư", topic: "N5" },
+            { jap: "書く", romaji: "kaku", viet: "Viết", topic: "N5" },
+            { jap: "送る", romaji: "okuru", viet: "Gửi", topic: "N5" },
+            { jap: "もらう", romaji: "morau", viet: "Nhận", topic: "N5" },
+            { jap: "あげる", romaji: "ageru", viet: "Cho / Tặng", topic: "N5" },
+            { jap: "くれる", romaji: "kureru", viet: "Cho (ai đó làm cho mình)", topic: "N5" },
+            { jap: "返す", romaji: "kaesu", viet: "Trả lại", topic: "N5" },
+            { jap: "借りる", romaji: "kariru", viet: "Mượn", topic: "N5" },
+            { jap: "貸す", romaji: "kasu", viet: "Cho mượn", topic: "N5" },
+            { jap: "見せる", romaji: "miseru", viet: "Cho xem", topic: "N5" },
+            { jap: "見る", romaji: "miru", viet: "Xem", topic: "N5" },
+            { jap: "見つける", romaji: "mitsukeru", viet: "Tìm thấy", topic: "N5" },
+            { jap: "探す", romaji: "sagasu", viet: "Tìm", topic: "N5" },
+            { jap: "知る", romaji: "shiru", viet: "Biết", topic: "N5" },
+            { jap: "知っている", romaji: "shitte iru", viet: "Biết", topic: "N5" },
+            { jap: "分かる", romaji: "wakaru", viet: "Hiểu", topic: "N5" },
+            { jap: "考える", romaji: "kangaeru", viet: "Suy nghĩ", topic: "N5" },
+            { jap: "思う", romaji: "omou", viet: "Nghĩ / Nghĩ rằng", topic: "N5" },
+            { jap: "信じる", romaji: "shinjiru", viet: "Tin", topic: "N5" },
+            { jap: "忘れる", romaji: "wasureru", viet: "Quên", topic: "N5" },
+            { jap: "思い出す", romaji: "omoidasu", viet: "Nhớ lại", topic: "N5" },
+            { jap: "覚える", romaji: "oboeru", viet: "Nhớ / Học thuộc", topic: "N5" },
+            { jap: "心配", romaji: "shinpai", viet: "Lo lắng", topic: "N5" },
+            { jap: "心配する", romaji: "shinpai suru", viet: "Lo lắng", topic: "N5" },
+            { jap: "気をつける", romaji: "ki wo tsukeru", viet: "Cẩn thận", topic: "N5" },
+            { jap: "注意する", romaji: "chuui suru", viet: "Chú ý", topic: "N5" },
+            { jap: "注意", romaji: "chuui", viet: "Chú ý", topic: "N5" },
+            { jap: "気", romaji: "ki", viet: "Khí / Tinh thần", topic: "N5" },
+            { jap: "頑張る", romaji: "ganbaru", viet: "Cố gắng", topic: "N5" },
+            { jap: "努力する", romaji: "doryoku suru", viet: "Nỗ lực", topic: "N5" },
+            { jap: "練習", romaji: "renshuu", viet: "Luyện tập", topic: "N5" },
+            { jap: "練習する", romaji: "renshuu suru", viet: "Luyện tập", topic: "N5" },
+            { jap: "準備", romaji: "junbi", viet: "Chuẩn bị", topic: "N5" },
+            { jap: "準備する", romaji: "junbi suru", viet: "Chuẩn bị", topic: "N5" },
+            { jap: "片付ける", romaji: "katazukeru", viet: "Dọn dẹp", topic: "N5" },
+            { jap: "掃除", romaji: "souji", viet: "Quét dọn", topic: "N5" },
+            { jap: "掃除する", romaji: "souji suru", viet: "Quét dọn", topic: "N5" },
+            { jap: "洗濯", romaji: "sentaku", viet: "Giặt giũ", topic: "N5" },
+            { jap: "洗濯する", romaji: "sentaku suru", viet: "Giặt giũ", topic: "N5" },
+            { jap: "洗う", romaji: "arau", viet: "Rửa", topic: "N5" },
+            { jap: "料理", romaji: "ryouri", viet: "Nấu ăn", topic: "N5" },
+            { jap: "料理する", romaji: "ryouri suru", viet: "Nấu ăn", topic: "N5" },
+            { jap: "食事", romaji: "shokuji", viet: "Bữa ăn", topic: "N5" },
+            { jap: "食事する", romaji: "shokuji suru", viet: "Ăn cơm", topic: "N5" },
+            { jap: "朝ご飯", romaji: "asagohan", viet: "Bữa sáng", topic: "N5" },
+            { jap: "昼ご飯", romaji: "hirugohan", viet: "Bữa trưa", topic: "N5" },
+            { jap: "晩ご飯", romaji: "bangohan", viet: "Bữa tối", topic: "N5" },
+            { jap: "お風呂", romaji: "ofuro", viet: "Bồn tắm", topic: "N5" },
+            { jap: "入る", romaji: "hairu", viet: "Vào", topic: "N5" },
+            { jap: "出る", romaji: "deru", viet: "Ra / Rời khỏi", topic: "N5" },
+            { jap: "開ける", romaji: "akeru", viet: "Mở", topic: "N5" },
+            { jap: "閉める", romaji: "shimeru", viet: "Đóng", topic: "N5" },
+            { jap: "閉じる", romaji: "tojiru", viet: "Đóng", topic: "N5" },
+            { jap: "つける", romaji: "tsukeru", viet: "Bật / Gắn", topic: "N5" },
+            { jap: "消す", romaji: "kesu", viet: "Tắt / Xóa", topic: "N5" },
+            { jap: "切る", romaji: "kiru", viet: "Cắt", topic: "N5" },
+            { jap: "止める", romaji: "tomeru", viet: "Dừng lại", topic: "N5" },
+            { jap: "止まる", romaji: "tomaru", viet: "Dừng lại", topic: "N5" },
+            { jap: "待つ", romaji: "matsu", viet: "Đợi", topic: "N5" },
+            { jap: "立つ", romaji: "tatsu", viet: "Đứng", topic: "N5" },
+            { jap: "座る", romaji: "suwaru", viet: "Ngồi", topic: "N5" },
+            { jap: "歩く", romaji: "aruku", viet: "Đi bộ", topic: "N5" },
+            { jap: "走る", romaji: "hashiru", viet: "Chạy", topic: "N5" },
+            { jap: "飛ぶ", romaji: "tobu", viet: "Bay", topic: "N5" },
+            { jap: "泳ぐ", romaji: "oyogu", viet: "Bơi", topic: "N5" },
+            { jap: "乗る", romaji: "noru", viet: "Lên (xe)", topic: "N5" },
+            { jap: "降りる", romaji: "oriru", viet: "Xuống (xe)", topic: "N5" },
+            { jap: "着る", romaji: "kiru", viet: "Mặc", topic: "N5" },
+            { jap: "脱ぐ", romaji: "nugu", viet: "Cởi", topic: "N5" },
+            { jap: "履く", romaji: "haku", viet: "Đi (giày)", topic: "N5" },
+            { jap: "かぶる", romaji: "kaburu", viet: "Đội (mũ)", topic: "N5" },
+            { jap: "かける", romaji: "kakeru", viet: "Đeo (kính)", topic: "N5" },
+            { jap: "する", romaji: "suru", viet: "Làm", topic: "N5" },
+            { jap: "やる", romaji: "yaru", viet: "Làm", topic: "N5" },
+            { jap: "できる", romaji: "dekiru", viet: "Có thể / Giỏi", topic: "N5" },
+            { jap: "出来る", romaji: "dekiru", viet: "Có thể", topic: "N5" },
+            { jap: "なる", romaji: "naru", viet: "Trở thành", topic: "N5" },
+            { jap: "いる", romaji: "iru", viet: "Ở / Cần", topic: "N5" },
+            { jap: "ある", romaji: "aru", viet: "Có", topic: "N5" },
+            { jap: "住む", romaji: "sumu", viet: "Sống", topic: "N5" },
+            { jap: "使う", romaji: "tsukau", viet: "Dùng", topic: "N5" },
+            { jap: "置く", romaji: "oku", viet: "Đặt", topic: "N5" },
+            { jap: "持つ", romaji: "motsu", viet: "Cầm / Có", topic: "N5" },
+            { jap: "持ってくる", romaji: "motte kuru", viet: "Mang đến", topic: "N5" },
+            { jap: "持っていく", romaji: "motte iku", viet: "Mang đi", topic: "N5" },
+            { jap: "かける", romaji: "kakeru", viet: "Treo / Đeo", topic: "N5" },
+            { jap: "かける", romaji: "kakeru", viet: "Gọi điện", topic: "N5" },
+            { jap: "かける", romaji: "kakeru", viet: "Mất (thời gian/tiền)", topic: "N5" },
+            { jap: "建てる", romaji: "tateru", viet: "Xây dựng", topic: "N5" },
+            { jap: "建つ", romaji: "tatsu", viet: "Được xây", topic: "N5" },
+            { jap: "直す", romaji: "naosu", viet: "Sửa", topic: "N5" },
+            { jap: "治る", romaji: "naoru", viet: "Khỏi bệnh", topic: "N5" },
+            { jap: "壊す", romaji: "kowasu", viet: "Làm hỏng", topic: "N5" },
+            { jap: "壊れる", romaji: "kowareru", viet: "Bị hỏng", topic: "N5" },
+            { jap: "切る", romaji: "kiru", viet: "Cắt", topic: "N5" },
+            { jap: "入れる", romaji: "ireru", viet: "Cho vào", topic: "N5" },
+            { jap: "出す", romaji: "dasu", viet: "Lấy ra", topic: "N5" },
+            { jap: "上げる", romaji: "ageru", viet: "Nâng lên / Tặng", topic: "N5" },
+            { jap: "下げる", romaji: "sageru", viet: "Hạ xuống", topic: "N5" },
+            { jap: "上がる", romaji: "agaru", viet: "Lên", topic: "N5" },
+            { jap: "下がる", romaji: "sagaru", viet: "Xuống", topic: "N5" },
+            { jap: "上がる", romaji: "agaru", viet: "Vào (nhà)", topic: "N5" },
+            { jap: "下りる", romaji: "oriru", viet: "Xuống", topic: "N5" },
+            { jap: "乗る", romaji: "noru", viet: "Lên", topic: "N5" },
+            { jap: "降りる", romaji: "oriru", viet: "Xuống", topic: "N5" },
+            { jap: "過ぎる", romaji: "sugiru", viet: "Quá / Vượt quá", topic: "N5" },
+            { jap: "回る", romaji: "mawaru", viet: "Quay", topic: "N5" },
+            { jap: "回す", romaji: "mawasu", viet: "Quay (cái gì đó)", topic: "N5" },
+            { jap: "動く", romaji: "ugoku", viet: "Di chuyển", topic: "N5" },
+            { jap: "動かす", romaji: "ugokasu", viet: "Di chuyển (cái gì đó)", topic: "N5" },
+            { jap: "回る", romaji: "mawaru", viet: "Đi vòng quanh", topic: "N5" },
+            { jap: "通る", romaji: "tooru", viet: "Đi qua", topic: "N5" },
+            { jap: "渡る", romaji: "wataru", viet: "Băng qua", topic: "N5" },
+            { jap: "曲がる", romaji: "magaru", viet: "Rẽ", topic: "N5" },
+            { jap: "止まる", romaji: "tomaru", viet: "Dừng lại", topic: "N5" },
+            { jap: "止める", romaji: "tomeru", viet: "Dừng lại (cái gì đó)", topic: "N5" },
+            { jap: "始まる", romaji: "hajimaru", viet: "Bắt đầu", topic: "N5" },
+            { jap: "始める", romaji: "hajimeru", viet: "Bắt đầu (làm gì đó)", topic: "N5" },
+            { jap: "終わる", romaji: "owaru", viet: "Kết thúc", topic: "N5" },
+            { jap: "終える", romaji: "oeru", viet: "Kết thúc (làm gì đó)", topic: "N5" },
+            { jap: "続く", romaji: "tsuzuku", viet: "Tiếp tục", topic: "N5" },
+            { jap: "続ける", romaji: "tsuzukeru", viet: "Tiếp tục (làm gì đó)", topic: "N5" },
+            { jap: "やめる", romaji: "yameru", viet: "Ngừng / Bỏ", topic: "N5" },
+            { jap: "止める", romaji: "yameru", viet: "Ngừng", topic: "N5" },
+            { jap: "変える", romaji: "kaeru", viet: "Thay đổi", topic: "N5" },
+            { jap: "変わる", romaji: "kawaru", viet: "Thay đổi", topic: "N5" },
+            { jap: "代える", romaji: "kaeru", viet: "Thay thế", topic: "N5" },
+            { jap: "代わる", romaji: "kawaru", viet: "Thay thế", topic: "N5" },
+            { jap: "戻る", romaji: "modoru", viet: "Quay lại", topic: "N5" },
+            { jap: "戻す", romaji: "modosu", viet: "Trả lại", topic: "N5" },
+            { jap: "返る", romaji: "kaeru", viet: "Quay lại", topic: "N5" },
+            { jap: "返す", romaji: "kaesu", viet: "Trả lại", topic: "N5" },
+            { jap: "かえす", romaji: "kaesu", viet: "Trả lại", topic: "N5" },
+            { jap: "かえる", romaji: "kaeru", viet: "Quay lại", topic: "N5" },
+            { jap: "かえる", romaji: "kaeru", viet: "Đổi / Thay", topic: "N5" },
+            { jap: "かえる", romaji: "kaeru", viet: "Đổi / Thay", topic: "N5" },
+            { jap: "集める", romaji: "atsumeru", viet: "Tập hợp", topic: "N5" },
+            { jap: "集まる", romaji: "atsumaru", viet: "Tập hợp", topic: "N5" },
+            { jap: "並ぶ", romaji: "narabu", viet: "Xếp hàng", topic: "N5" },
+            { jap: "並べる", romaji: "naraberu", viet: "Sắp xếp", topic: "N5" },
+            { jap: "揃える", romaji: "soroeru", viet: "Làm cho đều", topic: "N5" },
+            { jap: "揃う", romaji: "sorou", viet: "Đều", topic: "N5" },
+            { jap: "混む", romaji: "komu", viet: "Đông / Đông đúc", topic: "N5" },
+            { jap: "空く", romaji: "aku", viet: "Trống", topic: "N5" },
+            { jap: "空く", romaji: "suku", viet: "Trống", topic: "N5" },
+            { jap: "埋める", romaji: "umeru", viet: "Lấp", topic: "N5" },
+            { jap: "埋まる", romaji: "umaru", viet: "Được lấp", topic: "N5" },
+            { jap: "込む", romaji: "komu", viet: "Đông", topic: "N5" },
+            { jap: "抜く", romaji: "nuku", viet: "Rút ra", topic: "N5" },
+            { jap: "抜ける", romaji: "nukeru", viet: "Rơi ra", topic: "N5" },
+            { jap: "挟む", romaji: "hasamu", viet: "Kẹp", topic: "N5" },
+            { jap: "挟まる", romaji: "hasamaru", viet: "Bị kẹp", topic: "N5" },
+            { jap: "挟まる", romaji: "hasamaru", viet: "Bị kẹp", topic: "N5" },
+            { jap: "落ちる", romaji: "ochiru", viet: "Rơi", topic: "N5" },
+            { jap: "落とす", romaji: "otosu", viet: "Làm rơi", topic: "N5" },
+            { jap: "倒れる", romaji: "taoreru", viet: "Ngã", topic: "N5" },
+            { jap: "倒す", romaji: "taosu", viet: "Đánh ngã", topic: "N5" },
+            { jap: "起きる", romaji: "okiru", viet: "Dậy / Xảy ra", topic: "N5" },
+            { jap: "起こす", romaji: "okosu", viet: "Đánh thức", topic: "N5" },
+            { jap: "起こる", romaji: "okoru", viet: "Xảy ra", topic: "N5" },
+            { jap: "起きる", romaji: "okiru", viet: "Dậy", topic: "N5" },
+            { jap: "起きる", romaji: "okiru", viet: "Xảy ra", topic: "N5" },
+            { jap: "寝る", romaji: "neru", viet: "Ngủ", topic: "N5" },
+            { jap: "眠る", romaji: "nemuru", viet: "Ngủ", topic: "N5" },
+            { jap: "休む", romaji: "yasumu", viet: "Nghỉ", topic: "N5" },
+            { jap: "休憩", romaji: "kyuukei", viet: "Nghỉ giải lao", topic: "N5" },
+            { jap: "休憩する", romaji: "kyuukei suru", viet: "Nghỉ giải lao", topic: "N5" },
+            { jap: "休む", romaji: "yasumu", viet: "Nghỉ ngơi", topic: "N5" },
+            { jap: "泊まる", romaji: "tomaru", viet: "Ở trọ", topic: "N5" },
+            { jap: "泊める", romaji: "tomeru", viet: "Cho ở trọ", topic: "N5" },
+            { jap: "泊まる", romaji: "tomaru", viet: "Ở qua đêm", topic: "N5" },
+            { jap: "泊める", romaji: "tomeru", viet: "Cho ở qua đêm", topic: "N5" },
+            { jap: "過ごす", romaji: "sugosu", viet: "Trải qua", topic: "N5" },
+            { jap: "暮らす", romaji: "kurasu", viet: "Sống", topic: "N5" },
+            { jap: "住む", romaji: "sumu", viet: "Sống", topic: "N5" },
+            { jap: "生まれる", romaji: "umareru", viet: "Sinh ra", topic: "N5" },
+            { jap: "生む", romaji: "umu", viet: "Sinh", topic: "N5" },
+            { jap: "育てる", romaji: "sodateru", viet: "Nuôi", topic: "N5" },
+            { jap: "育つ", romaji: "sodatsu", viet: "Lớn lên", topic: "N5" },
+            { jap: "成長する", romaji: "seichou suru", viet: "Trưởng thành", topic: "N5" },
+            { jap: "成長", romaji: "seichou", viet: "Trưởng thành", topic: "N5" },
+            { jap: "結婚", romaji: "kekkon", viet: "Kết hôn", topic: "N5" },
+            { jap: "結婚する", romaji: "kekkon suru", viet: "Kết hôn", topic: "N5" },
+            { jap: "離婚", romaji: "rikon", viet: "Ly hôn", topic: "N5" },
+            { jap: "離婚する", romaji: "rikon suru", viet: "Ly hôn", topic: "N5" },
+            { jap: "会う", romaji: "au", viet: "Gặp", topic: "N5" },
+            { jap: "合う", romaji: "au", viet: "Phù hợp", topic: "N5" },
+            { jap: "出会う", romaji: "deau", viet: "Gặp gỡ", topic: "N5" },
+            { jap: "別れる", romaji: "wakareru", viet: "Chia tay", topic: "N5" },
+            { jap: "分かれる", romaji: "wakareru", viet: "Chia ra", topic: "N5" },
+            { jap: "別れる", romaji: "wakareru", viet: "Chia tay", topic: "N5" },
+            { jap: "分かれる", romaji: "wakareru", viet: "Chia ra", topic: "N5" },
+            { jap: "分かる", romaji: "wakaru", viet: "Hiểu", topic: "N5" },
+            { jap: "分ける", romaji: "wakeru", viet: "Chia", topic: "N5" },
+            { jap: "知る", romaji: "shiru", viet: "Biết", topic: "N5" },
+            { jap: "知らせる", romaji: "shiraseru", viet: "Thông báo", topic: "N5" },
+            { jap: "教える", romaji: "oshieru", viet: "Dạy", topic: "N5" },
+            { jap: "習う", romaji: "narau", viet: "Học", topic: "N5" },
+            { jap: "学ぶ", romaji: "manabu", viet: "Học", topic: "N5" },
+            { jap: "勉強する", romaji: "benkyou suru", viet: "Học", topic: "N5" },
+            { jap: "勉強", romaji: "benkyou", viet: "Học", topic: "N5" },
+            { jap: "研究", romaji: "kenkyuu", viet: "Nghiên cứu", topic: "N5" },
+            { jap: "研究する", romaji: "kenkyuu suru", viet: "Nghiên cứu", topic: "N5" },
+            { jap: "調べる", romaji: "shiraberu", viet: "Điều tra", topic: "N5" },
+            { jap: "調べる", romaji: "shiraberu", viet: "Tra cứu", topic: "N5" },
+            { jap: "試験", romaji: "shiken", viet: "Kỳ thi", topic: "N5" },
+            { jap: "試験する", romaji: "shiken suru", viet: "Thi", topic: "N5" },
+            { jap: "テスト", romaji: "tesuto", viet: "Bài kiểm tra", topic: "N5" },
+            { jap: "テストする", romaji: "tesuto suru", viet: "Kiểm tra", topic: "N5" },
+            { jap: "受ける", romaji: "ukeru", viet: "Nhận / Thi", topic: "N5" },
+            { jap: "合格する", romaji: "goukaku suru", viet: "Đậu", topic: "N5" },
+            { jap: "合格", romaji: "goukaku", viet: "Đậu", topic: "N5" },
+            { jap: "失敗する", romaji: "shippai suru", viet: "Thất bại", topic: "N5" },
+            { jap: "失敗", romaji: "shippai", viet: "Thất bại", topic: "N5" },
+            { jap: "成功する", romaji: "seikou suru", viet: "Thành công", topic: "N5" },
+            { jap: "成功", romaji: "seikou", viet: "Thành công", topic: "N5" },
+            { jap: "頑張る", romaji: "ganbaru", viet: "Cố gắng", topic: "N5" },
+            { jap: "努力する", romaji: "doryoku suru", viet: "Nỗ lực", topic: "N5" },
+            { jap: "努力", romaji: "doryoku", viet: "Nỗ lực", topic: "N5" },
+            { jap: "働く", romaji: "hataraku", viet: "Làm việc", topic: "N5" },
+            { jap: "仕事", romaji: "shigoto", viet: "Công việc", topic: "N5" },
+            { jap: "仕事する", romaji: "shigoto suru", viet: "Làm việc", topic: "N5" },
+            { jap: "働く", romaji: "hataraku", viet: "Làm việc", topic: "N5" },
+            { jap: "勤める", romaji: "tsutomeru", viet: "Làm việc (cho công ty)", topic: "N5" },
+            { jap: "勤める", romaji: "tsutomeru", viet: "Làm việc", topic: "N5" },
+            { jap: "働く", romaji: "hataraku", viet: "Làm việc", topic: "N5" },
+            { jap: "会社", romaji: "kaisha", viet: "Công ty", topic: "N5" },
+            { jap: "会社員", romaji: "kaishain", viet: "Nhân viên công ty", topic: "N5" },
+            { jap: "社員", romaji: "shain", viet: "Nhân viên", topic: "N5" },
+            { jap: "社長", romaji: "shachou", viet: "Giám đốc", topic: "N5" },
+            { jap: "部長", romaji: "buchou", viet: "Trưởng phòng", topic: "N5" },
+            { jap: "課長", romaji: "kachou", viet: "Trưởng ban", topic: "N5" },
+            { jap: "係長", romaji: "kakarichou", viet: "Trưởng nhóm", topic: "N5" },
+            { jap: "店長", romaji: "tenchou", viet: "Quản lý cửa hàng", topic: "N5" },
+            { jap: "社員", romaji: "shain", viet: "Nhân viên", topic: "N5" },
+            { jap: "アルバイト", romaji: "arubaito", viet: "Công việc bán thời gian", topic: "N5" },
+            { jap: "パート", romaji: "paato", viet: "Công việc bán thời gian", topic: "N5" },
+            { jap: "アルバイトする", romaji: "arubaito suru", viet: "Làm thêm", topic: "N5" },
+            { jap: "パートする", romaji: "paato suru", viet: "Làm bán thời gian", topic: "N5" },
+            { jap: "給料", romaji: "kyuuryou", viet: "Lương", topic: "N5" },
+            { jap: "給与", romaji: "kyuuyo", viet: "Lương", topic: "N5" },
+            { jap: "時給", romaji: "jikyuu", viet: "Lương theo giờ", topic: "N5" },
+            { jap: "月給", romaji: "gekkyuu", viet: "Lương tháng", topic: "N5" },
+            { jap: "年収", romaji: "nenshuu", viet: "Thu nhập năm", topic: "N5" },
+            
+            // Thêm từ vựng N5 - Đồ vật, đồ dùng
+            { jap: "かばん", romaji: "kaban", viet: "Cặp / Túi", topic: "N5" },
+            { jap: "靴", romaji: "kutsu", viet: "Giày", topic: "N5" },
+            { jap: "靴下", romaji: "kutsushita", viet: "Tất", topic: "N5" },
+            { jap: "帽子", romaji: "boushi", viet: "Mũ", topic: "N5" },
+            { jap: "シャツ", romaji: "shatsu", viet: "Áo sơ mi", topic: "N5" },
+            { jap: "ズボン", romaji: "zubon", viet: "Quần", topic: "N5" },
+            { jap: "スカート", romaji: "sukaato", viet: "Váy", topic: "N5" },
+            { jap: "セーター", romaji: "seetaa", viet: "Áo len", topic: "N5" },
+            { jap: "コート", romaji: "kooto", viet: "Áo khoác", topic: "N5" },
+            { jap: "めがね", romaji: "megane", viet: "Kính", topic: "N5" },
+            
+            // Thêm từ vựng N5 - Thời tiết, mùa
+            { jap: "天気", romaji: "tenki", viet: "Thời tiết", topic: "N5" },
+            { jap: "晴れ", romaji: "hare", viet: "Nắng", topic: "N5" },
+            { jap: "雨", romaji: "ame", viet: "Mưa", topic: "N5" },
+            { jap: "雪", romaji: "yuki", viet: "Tuyết", topic: "N5" },
+            { jap: "風", romaji: "kaze", viet: "Gió", topic: "N5" },
+            { jap: "雲", romaji: "kumo", viet: "Mây", topic: "N5" },
+            { jap: "曇り", romaji: "kumori", viet: "Nhiều mây", topic: "N5" },
+            { jap: "季節", romaji: "kisetsu", viet: "Mùa", topic: "N5" },
+            { jap: "春", romaji: "haru", viet: "Mùa xuân", topic: "N5" },
+            { jap: "夏", romaji: "natsu", viet: "Mùa hè", topic: "N5" },
+            { jap: "秋", romaji: "aki", viet: "Mùa thu", topic: "N5" },
+            { jap: "冬", romaji: "fuyu", viet: "Mùa đông", topic: "N5" },
+            
+            // Thêm từ vựng N5 - Ngày, tháng, năm
+            { jap: "年", romaji: "toshi", viet: "Năm", topic: "N5" },
+            { jap: "月", romaji: "tsuki", viet: "Tháng", topic: "N5" },
+            { jap: "週", romaji: "shuu", viet: "Tuần", topic: "N5" },
+            { jap: "日", romaji: "hi", viet: "Ngày", topic: "N5" },
+            { jap: "時間", romaji: "jikan", viet: "Thời gian / Giờ", topic: "N5" },
+            { jap: "分", romaji: "fun", viet: "Phút", topic: "N5" },
+            { jap: "秒", romaji: "byou", viet: "Giây", topic: "N5" },
+            { jap: "今週", romaji: "konshuu", viet: "Tuần này", topic: "N5" },
+            { jap: "先週", romaji: "senshuu", viet: "Tuần trước", topic: "N5" },
+            { jap: "今月", romaji: "kongetsu", viet: "Tháng này", topic: "N5" },
+            { jap: "先月", romaji: "sengetsu", viet: "Tháng trước", topic: "N5" },
+            { jap: "今年", romaji: "kotoshi", viet: "Năm nay", topic: "N5" },
+            { jap: "去年", romaji: "kyonen", viet: "Năm ngoái", topic: "N5" },
+            { jap: "来年", romaji: "rainen", viet: "Năm sau", topic: "N5" },
+            
+            // Thêm từ vựng N5 - Thức ăn, đồ uống
+            { jap: "米", romaji: "kome", viet: "Gạo", topic: "N5" },
+            { jap: "パン", romaji: "pan", viet: "Bánh mì", topic: "N5" },
+            { jap: "麺", romaji: "men", viet: "Mì", topic: "N5" },
+            { jap: "ラーメン", romaji: "raamen", viet: "Mì ramen", topic: "N5" },
+            { jap: "うどん", romaji: "udon", viet: "Mì udon", topic: "N5" },
+            { jap: "そば", romaji: "soba", viet: "Mì soba", topic: "N5" },
+            { jap: "すし", romaji: "sushi", viet: "Sushi", topic: "N5" },
+            { jap: "さしみ", romaji: "sashimi", viet: "Sashimi", topic: "N5" },
+            { jap: "てんぷら", romaji: "tenpura", viet: "Tempura", topic: "N5" },
+            { jap: "お好み焼き", romaji: "okonomiyaki", viet: "Okonomiyaki", topic: "N5" },
+            { jap: "焼き肉", romaji: "yakiniku", viet: "Thịt nướng", topic: "N5" },
+            { jap: "カレー", romaji: "karee", viet: "Cà ri", topic: "N5" },
+            { jap: "スープ", romaji: "suupu", viet: "Súp", topic: "N5" },
+            { jap: "サラダ", romaji: "sarada", viet: "Salad", topic: "N5" },
+            { jap: "ケーキ", romaji: "keeki", viet: "Bánh ngọt", topic: "N5" },
+            { jap: "アイスクリーム", romaji: "aisu kuriimu", viet: "Kem", topic: "N5" },
+            { jap: "お菓子", romaji: "okashi", viet: "Bánh kẹo", topic: "N5" },
+            { jap: "果物", romaji: "kudamono", viet: "Hoa quả", topic: "N5" },
+            { jap: "りんご", romaji: "ringo", viet: "Táo", topic: "N5" },
+            { jap: "みかん", romaji: "mikan", viet: "Quýt", topic: "N5" },
+            { jap: "バナナ", romaji: "banana", viet: "Chuối", topic: "N5" },
+            { jap: "いちご", romaji: "ichigo", viet: "Dâu tây", topic: "N5" },
+            { jap: "ぶどう", romaji: "budou", viet: "Nho", topic: "N5" },
+            { jap: "野菜", romaji: "yasai", viet: "Rau", topic: "N5" },
+            { jap: "たまねぎ", romaji: "tamanegi", viet: "Hành tây", topic: "N5" },
+            { jap: "にんじん", romaji: "ninjin", viet: "Cà rốt", topic: "N5" },
+            { jap: "じゃがいも", romaji: "jagaimo", viet: "Khoai tây", topic: "N5" },
+            { jap: "トマト", romaji: "tomato", viet: "Cà chua", topic: "N5" },
+            { jap: "きゅうり", romaji: "kyuuri", viet: "Dưa chuột", topic: "N5" },
+            { jap: "なす", romaji: "nasu", viet: "Cà tím", topic: "N5" },
+            { jap: "ピーマン", romaji: "piiman", viet: "Ớt chuông", topic: "N5" },
+            { jap: "キャベツ", romaji: "kyabetsu", viet: "Bắp cải", topic: "N5" },
+            { jap: "ほうれん草", romaji: "hourensou", viet: "Rau chân vịt", topic: "N5" },
+            { jap: "肉", romaji: "niku", viet: "Thịt", topic: "N5" },
+            { jap: "牛肉", romaji: "gyuuniku", viet: "Thịt bò", topic: "N5" },
+            { jap: "豚肉", romaji: "butaniku", viet: "Thịt lợn", topic: "N5" },
+            { jap: "鶏肉", romaji: "toriniku", viet: "Thịt gà", topic: "N5" },
+            { jap: "魚", romaji: "sakana", viet: "Cá", topic: "N5" },
+            { jap: "えび", romaji: "ebi", viet: "Tôm", topic: "N5" },
+            { jap: "たこ", romaji: "tako", viet: "Bạch tuộc", topic: "N5" },
+            { jap: "いか", romaji: "ika", viet: "Mực", topic: "N5" },
+            { jap: "卵", romaji: "tamago", viet: "Trứng", topic: "N5" },
+            { jap: "豆腐", romaji: "toufu", viet: "Đậu phụ", topic: "N5" },
+            { jap: "納豆", romaji: "nattou", viet: "Natto", topic: "N5" },
+            { jap: "味噌", romaji: "miso", viet: "Miso", topic: "N5" },
+            { jap: "醤油", romaji: "shouyu", viet: "Nước tương", topic: "N5" },
+            { jap: "塩", romaji: "shio", viet: "Muối", topic: "N5" },
+            { jap: "砂糖", romaji: "satou", viet: "Đường", topic: "N5" },
+            { jap: "油", romaji: "abura", viet: "Dầu", topic: "N5" },
+            { jap: "胡椒", romaji: "koshou", viet: "Tiêu", topic: "N5" },
+            { jap: "わさび", romaji: "wasabi", viet: "Wasabi", topic: "N5" },
+            { jap: "からし", romaji: "karashi", viet: "Mù tạt", topic: "N5" },
+            { jap: "パン", romaji: "pan", viet: "Bánh mì", topic: "N5" },
+            { jap: "バター", romaji: "bataa", viet: "Bơ", topic: "N5" },
+            { jap: "チーズ", romaji: "chiizu", viet: "Phô mai", topic: "N5" },
+            { jap: "ハム", romaji: "hamu", viet: "Giăm bông", topic: "N5" },
+            { jap: "ソーセージ", romaji: "sooseeji", viet: "Xúc xích", topic: "N5" },
+            { jap: "飲み物", romaji: "nomimono", viet: "Đồ uống", topic: "N5" },
+            { jap: "水", romaji: "mizu", viet: "Nước", topic: "N5" },
+            { jap: "お茶", romaji: "ocha", viet: "Trà", topic: "N5" },
+            { jap: "緑茶", romaji: "ryokucha", viet: "Trà xanh", topic: "N5" },
+            { jap: "紅茶", romaji: "koucha", viet: "Trà đen", topic: "N5" },
+            { jap: "コーヒー", romaji: "koohii", viet: "Cà phê", topic: "N5" },
+            { jap: "ジュース", romaji: "juusu", viet: "Nước ép", topic: "N5" },
+            { jap: "オレンジジュース", romaji: "orenji juusu", viet: "Nước cam", topic: "N5" },
+            { jap: "りんごジュース", romaji: "ringo juusu", viet: "Nước táo", topic: "N5" },
+            { jap: "コーラ", romaji: "koora", viet: "Coca cola", topic: "N5" },
+            { jap: "ビール", romaji: "biiru", viet: "Bia", topic: "N5" },
+            { jap: "お酒", romaji: "osake", viet: "Rượu", topic: "N5" },
+            { jap: "日本酒", romaji: "nihonshu", viet: "Rượu sake", topic: "N5" },
+            { jap: "ワイン", romaji: "wain", viet: "Rượu vang", topic: "N5" },
+            { jap: "ミルク", romaji: "miruku", viet: "Sữa", topic: "N5" },
+            { jap: "牛乳", romaji: "gyuunyuu", viet: "Sữa bò", topic: "N5" },
+            { jap: "豆乳", romaji: "tounyuu", viet: "Sữa đậu nành", topic: "N5" },
+            { jap: "ヨーグルト", romaji: "yooguruto", viet: "Sữa chua", topic: "N5" },
+            { jap: "アイスクリーム", romaji: "aisukuriimu", viet: "Kem", topic: "N5" },
+            { jap: "氷", romaji: "koori", viet: "Đá", topic: "N5" },
+            { jap: "砂糖", romaji: "satou", viet: "Đường", topic: "N5" },
+            { jap: "塩", romaji: "shio", viet: "Muối", topic: "N5" },
+            { jap: "調味料", romaji: "choumiryou", viet: "Gia vị", topic: "N5" },
+            { jap: "料理", romaji: "ryouri", viet: "Món ăn", topic: "N5" },
+            { jap: "和食", romaji: "washoku", viet: "Món ăn Nhật", topic: "N5" },
+            { jap: "洋食", romaji: "youshoku", viet: "Món ăn Tây", topic: "N5" },
+            { jap: "中華料理", romaji: "chuuka ryouri", viet: "Món ăn Trung Hoa", topic: "N5" },
+            { jap: "弁当", romaji: "bentou", viet: "Cơm hộp", topic: "N5" },
+            { jap: "おにぎり", romaji: "onigiri", viet: "Cơm nắm", topic: "N5" },
+            { jap: "おかゆ", romaji: "okayu", viet: "Cháo", topic: "N5" },
+            { jap: "おかず", romaji: "okazu", viet: "Món phụ", topic: "N5" },
+            { jap: "主食", romaji: "shushoku", viet: "Món chính", topic: "N5" },
+            { jap: "副食", romaji: "fukushoku", viet: "Món phụ", topic: "N5" },
+            { jap: "デザート", romaji: "dezato", viet: "Món tráng miệng", topic: "N5" },
+            { jap: "おやつ", romaji: "oyatsu", viet: "Đồ ăn vặt", topic: "N5" },
+            { jap: "おつまみ", romaji: "otsumami", viet: "Đồ nhắm", topic: "N5" },
+            { jap: "スナック", romaji: "sunakku", viet: "Đồ ăn vặt", topic: "N5" },
+            { jap: "ポテトチップス", romaji: "poteto chippusu", viet: "Khoai tây chiên", topic: "N5" },
+            { jap: "チョコレート", romaji: "chokoreeto", viet: "Sô cô la", topic: "N5" },
+            { jap: "クッキー", romaji: "kukkii", viet: "Bánh quy", topic: "N5" },
+            { jap: "ビスケット", romaji: "bisuketto", viet: "Bánh quy", topic: "N5" },
+            { jap: "せんべい", romaji: "senbei", viet: "Bánh quy gạo", topic: "N5" },
+            { jap: "あめ", romaji: "ame", viet: "Kẹo", topic: "N5" },
+            { jap: "ガム", romaji: "gamu", viet: "Kẹo cao su", topic: "N5" },
+            { jap: "ゼリー", romaji: "zerii", viet: "Thạch", topic: "N5" },
+            { jap: "プリン", romaji: "purin", viet: "Pudding", topic: "N5" },
+            { jap: "ケーキ", romaji: "keeki", viet: "Bánh kem", topic: "N5" },
+            { jap: "パンケーキ", romaji: "pankeki", viet: "Bánh kếp", topic: "N5" },
+            { jap: "ドーナツ", romaji: "donaatsu", viet: "Bánh rán", topic: "N5" },
+            { jap: "マフィン", romaji: "mafin", viet: "Bánh muffin", topic: "N5" },
+            { jap: "マカロン", romaji: "makaron", viet: "Macaron", topic: "N5" },
+            { jap: "タルト", romaji: "taruto", viet: "Bánh tart", topic: "N5" },
+            { jap: "パイ", romaji: "pai", viet: "Bánh pie", topic: "N5" },
+            { jap: "クレープ", romaji: "kureepu", viet: "Crepe", topic: "N5" },
+            { jap: "ワッフル", romaji: "waffuru", viet: "Waffle", topic: "N5" },
+            { jap: "アイスクリーム", romaji: "aisukuriimu", viet: "Kem", topic: "N5" },
+            { jap: "ソフトクリーム", romaji: "sofuto kuriimu", viet: "Kem mềm", topic: "N5" },
+            { jap: "シャーベット", romaji: "shaabetto", viet: "Sorbet", topic: "N5" },
+            { jap: "かき氷", romaji: "kakigoori", viet: "Đá bào", topic: "N5" },
+            { jap: "あんみつ", romaji: "anmitsu", viet: "Anmitsu", topic: "N5" },
+            { jap: "みつまめ", romaji: "mitsumame", viet: "Mitsumame", topic: "N5" },
+            { jap: "ぜんざい", romaji: "zenzai", viet: "Zenzai", topic: "N5" },
+            { jap: "おしるこ", romaji: "oshiruko", viet: "Oshiruko", topic: "N5" },
+            { jap: "ようかん", romaji: "youkan", viet: "Yokan", topic: "N5" },
+            { jap: "まんじゅう", romaji: "manjuu", viet: "Bánh bao", topic: "N5" },
+            { jap: "だんご", romaji: "dango", viet: "Dango", topic: "N5" },
+            { jap: "たい焼き", romaji: "taiyaki", viet: "Taiyaki", topic: "N5" },
+            { jap: "たこ焼き", romaji: "takoyaki", viet: "Takoyaki", topic: "N5" },
+            { jap: "お好み焼き", romaji: "okonomiyaki", viet: "Okonomiyaki", topic: "N5" },
+            { jap: "たこ焼き", romaji: "takoyaki", viet: "Takoyaki", topic: "N5" },
+            { jap: "焼きそば", romaji: "yakisoba", viet: "Yakisoba", topic: "N5" },
+            { jap: "ラーメン", romaji: "raamen", viet: "Mì ramen", topic: "N5" },
+            { jap: "うどん", romaji: "udon", viet: "Mì udon", topic: "N5" },
+            { jap: "そば", romaji: "soba", viet: "Mì soba", topic: "N5" },
+            { jap: "パスタ", romaji: "pasuta", viet: "Pasta", topic: "N5" },
+            { jap: "スパゲッティ", romaji: "supagetti", viet: "Spaghetti", topic: "N5" },
+            { jap: "マカロニ", romaji: "makaroni", viet: "Macaroni", topic: "N5" },
+            { jap: "ラザニア", romaji: "razania", viet: "Lasagna", topic: "N5" },
+            { jap: "ピザ", romaji: "piza", viet: "Pizza", topic: "N5" },
+            { jap: "ハンバーガー", romaji: "hanbaagaa", viet: "Hamburger", topic: "N5" },
+            { jap: "ホットドッグ", romaji: "hottodoggu", viet: "Hot dog", topic: "N5" },
+            { jap: "サンドイッチ", romaji: "sandoicchi", viet: "Sandwich", topic: "N5" },
+            { jap: "トースト", romaji: "toosuto", viet: "Bánh mì nướng", topic: "N5" },
+            { jap: "フレンチトースト", romaji: "furenchi toosuto", viet: "French toast", topic: "N5" },
+            { jap: "ベーグル", romaji: "beeguru", viet: "Bagel", topic: "N5" },
+            { jap: "クロワッサン", romaji: "kurowassan", viet: "Croissant", topic: "N5" },
+            { jap: "ブレッド", romaji: "bureddo", viet: "Bánh mì", topic: "N5" },
+            { jap: "ロールパン", romaji: "roorupan", viet: "Bánh mì cuộn", topic: "N5" },
+            { jap: "コッペパン", romaji: "koppepan", viet: "Bánh mì kẹp", topic: "N5" },
+            { jap: "あんパン", romaji: "anpan", viet: "Bánh mì nhân đậu đỏ", topic: "N5" },
+            { jap: "カレーパン", romaji: "kareepan", viet: "Bánh mì cà ri", topic: "N5" },
+            { jap: "メロンパン", romaji: "meronpan", viet: "Melon pan", topic: "N5" },
+            { jap: "クリームパン", romaji: "kuriimupan", viet: "Bánh mì kem", topic: "N5" },
+            { jap: "ジャムパン", romaji: "jamupan", viet: "Bánh mì mứt", topic: "N5" },
+            { jap: "チョココロネ", romaji: "chokokorone", viet: "Bánh sừng bò sô cô la", topic: "N5" },
+            { jap: "メロンパン", romaji: "meronpan", viet: "Melon pan", topic: "N5" }
+        ];
+
+        // --- 2. CẤU HÌNH GAME ---
+        let TOTAL_ROUNDS = 30;
+        const TIME_LIMIT = 5000; // 5000ms = 5 giây
+        const MAX_SCORE_PER_Q = 100;
+
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let correctCount = 0;
+        let totalTimeSpent = 0;
+        let streak = 0;
+        let highScore = localStorage.getItem('vocab_game_highscore') || 0;
+        let selectedTopic = 'all';
+
+        // Hiển thị high score ngay khi vào
+        document.getElementById('high-score-display').innerText = `🏆 Kỷ lục: ${highScore}`;
+
+        let startTime; // Thời điểm bắt đầu câu hỏi
+        let animationFrameId;
+
+        // --- 3. LOGIC GAME ---
+
+        function selectTopic(topic, btn) {
+            playClickSound();
+            selectedTopic = topic;
+
+            // Update UI
+            document.querySelectorAll('.btn-topic').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Tính số câu hỏi có sẵn
+            let count = 0;
+            if (topic === 'all') {
+                count = vocabulary.length;
+            } else if (topic === 'N5') {
+                // Chọn tất cả từ vựng N5 (từ N5-1 đến N5-25)
+                count = vocabulary.filter(v => v.topic.startsWith('N5')).length;
+            } else {
+                count = vocabulary.filter(v => v.topic === topic).length;
+            }
+
+            // Giới hạn max 15 câu hoặc theo số lượng có sẵn
+            let displayCount = Math.min(30, count);
+            document.getElementById('question-count-display').innerText = displayCount;
+        }
+
+        function startGame() {
+            playClickSound();
+            score = 0;
+            correctCount = 0;
+            currentIndex = 0;
+            totalTimeSpent = 0;
+            streak = 0;
+            updateComboUI();
+            document.getElementById('current-score').innerText = '0';
+
+            // Filter theo topic
+            let pool = [];
+            if (selectedTopic === 'all') {
+                pool = [...vocabulary];
+            } else if (selectedTopic === 'N5') {
+                // Chọn tất cả từ vựng N5 (từ N5-1 đến N5-25)
+                pool = vocabulary.filter(v => v.topic.startsWith('N5'));
+            } else {
+                pool = vocabulary.filter(v => v.topic === selectedTopic);
+            }
+
+            // Shuffle và lấy câu hỏi
+            // Nếu số lượng từ ít hơn 15, lấy hết. Nếu nhiều hơn, lấy 15.
+            TOTAL_ROUNDS = Math.min(30, pool.length);
+
+            // Cập nhật hiển thị tổng số câu
+            document.getElementById('total-rounds-display').innerText = TOTAL_ROUNDS;
+            document.getElementById('final-total-display').innerText = TOTAL_ROUNDS;
+
+            currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_ROUNDS);
+
+            switchScreen('game-screen');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentIndex >= currentQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const q = currentQuestions[currentIndex];
+
+            // UI Update
+            document.getElementById('q-index').innerText = currentIndex + 1;
+            document.getElementById('question-text').innerText = q.jap;
+            document.getElementById('question-romaji').innerText = `(${q.romaji})`;
+            document.getElementById('timer-bar').style.width = '100%';
+            document.getElementById('timer-bar').style.background = 'linear-gradient(90deg, #ff6b6b, #ff4757)';
+
+            // Đọc từ tiếng Nhật
+            speakJapanese(q.jap);
+
+            // Tạo đáp án (1 Đúng + 3 Sai)
+            let options = [q.viet];
+
+            // Lấy đáp án sai từ TOÀN BỘ kho từ (để khó hơn), trừ từ hiện tại
+            let wrongOptions = vocabulary.filter(w => w.viet !== q.viet);
+            wrongOptions = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 3);
+            wrongOptions.forEach(w => options.push(w.viet));
+            options.sort(() => 0.5 - Math.random());
+
+            // Render nút
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-option';
+                btn.innerText = opt;
+                // Nếu đang animation thì không cho click
+                btn.onclick = (e) => handleAnswer(e.target, opt, q.viet);
+                container.appendChild(btn);
+            });
+
+            // Bắt đầu Timer
+            startTime = Date.now();
+            runTimer();
+        }
+
+        function runTimer() {
+            function step() {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, TIME_LIMIT - elapsed);
+                const percent = (remaining / TIME_LIMIT) * 100;
+
+                document.getElementById('timer-bar').style.width = percent + '%';
+
+                if (remaining <= 0) {
+                    handleAnswer(null, null, null); // Hết giờ
+                } else {
+                    animationFrameId = requestAnimationFrame(step);
+                }
+            }
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(step);
+        }
+
+        function handleAnswer(btnElement, selected, correct) {
+            cancelAnimationFrame(animationFrameId); // Dừng timer ngay
+
+            // Chặn click nhiều lần
+            const allBtns = document.querySelectorAll('.btn-option');
+            allBtns.forEach(b => b.onclick = null);
+
+            const timeTaken = Date.now() - startTime;
+            let pointsEarned = 0;
+
+            if (selected !== null && selected === correct) {
+                // TÍNH ĐIỂM DỰA TRÊN TỐC ĐỘ + COMBO
+                streak++;
+
+                // Công thức: (Thời gian còn lại / Tổng thời gian) * Max điểm
+                const timeRatio = Math.max(0, (TIME_LIMIT - timeTaken) / TIME_LIMIT);
+                let basePoints = Math.floor(timeRatio * MAX_SCORE_PER_Q);
+                if (basePoints < 10) basePoints = 10;
+
+                // Bonus Combo: Mỗi streak +10% điểm
+                const comboMultiplier = 1 + (streak > 1 ? (streak - 1) * 0.1 : 0);
+                pointsEarned = Math.floor(basePoints * comboMultiplier);
+
+                score += pointsEarned;
+                correctCount++;
+                totalTimeSpent += timeTaken;
+
+                // Hiệu ứng visual
+                if (btnElement) btnElement.classList.add('btn-correct');
+                showFloatingScore(`+${pointsEarned}`);
+
+                // ÂM THANH ĐÚNG
+                playCorrectSound();
+                if (streak >= 3) {
+                    setTimeout(() => playComboSound(streak), 150);
+                }
+            } else {
+                // Sai hoặc hết giờ -> Reset streak
+                streak = 0;
+                if (btnElement) btnElement.classList.add('btn-wrong');
+                // Highlight câu đúng cho người chơi biết
+                allBtns.forEach(b => {
+                    if (b.innerText === correct) b.classList.add('btn-correct');
+                });
+                totalTimeSpent += TIME_LIMIT;
+
+                // ÂM THANH SAI
+                playWrongSound();
+            }
+
+            updateComboUI();
+
+            document.getElementById('current-score').innerText = score;
+
+            // Chuyển câu tự động sau 1 chút (để kịp nhìn đúng sai)
+            setTimeout(() => {
+                currentIndex++;
+                loadQuestion();
+            }, 800); // Delay 800ms
+        }
+
+        function updateComboUI() {
+            const comboEl = document.getElementById('combo-display');
+            if (streak > 1) {
+                comboEl.innerText = `Combo x${streak} 🔥`;
+                comboEl.classList.add('combo-active');
+            } else {
+                comboEl.classList.remove('combo-active');
+            }
+        }
+
+        function showFloatingScore(text) {
+            const popup = document.getElementById('score-popup');
+            popup.innerText = text;
+            popup.classList.add('show');
+            setTimeout(() => {
+                popup.classList.remove('show');
+            }, 800);
+        }
+
+        function endGame() {
+            switchScreen('result-screen');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('correct-count').innerText = correctCount;
+
+            const avgTime = (totalTimeSpent / TOTAL_ROUNDS / 1000).toFixed(2);
+            document.getElementById('avg-time').innerText = avgTime;
+
+            // Đánh giá vui
+            let rating = "";
+            let maxScore = TOTAL_ROUNDS * MAX_SCORE_PER_Q; // Điểm tối đa lý thuyết (chưa tính combo)
+
+            // Điều chỉnh rating theo tỷ lệ điểm đạt được
+            let ratio = score / maxScore;
+
+            if (ratio > 0.8) rating = "🏆 Thần Đồng Đất Việt!";
+            else if (ratio > 0.5) rating = "😎 Khá Quá Nhỉ!";
+            else rating = "🐢 Cần Nhanh Tay Hơn!";
+
+            // Cập nhật High Score (chỉ lưu nếu chơi chế độ All hoặc logic khác tùy ý, ở đây lưu chung)
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('vocab_game_highscore', highScore);
+                document.getElementById('high-score-display').innerText = `🏆 Kỷ lục: ${highScore}`;
+                rating += " (KỶ LỤC MỚI!)";
+            }
+
+            document.getElementById('rating-text').innerText = rating;
+        }
+
+        function backToMenu() {
+            playClickSound();
+            switchScreen('start-screen');
+        }
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // --- 4. FLASHCARD MODE ---
+        let flashcardDeck = [];
+        let flashcardIndex = 0;
+
+        const topicNames = {
+            'N5': 'N5',
+            'N5-1': 'Bài 1',
+            'N5-2': 'Bài 2',
+            'N5-3': 'Bài 3',
+            'N5-4': 'Bài 4',
+            'N5-5': 'Bài 5',
+            'N5-6': 'Bài 6',
+            'N5-7': 'Bài 7',
+            'N5-8': 'Bài 8',
+            'N5-9': 'Bài 9',
+            'N5-10': 'Bài 10',
+            'N5-11': 'Bài 11',
+            'N5-12': 'Bài 12',
+            'N5-13': 'Bài 13',
+            'N5-14': 'Bài 14',
+            'N5-15': 'Bài 15',
+            'N5-16': 'Bài 16',
+            'N5-17': 'Bài 17',
+            'N5-18': 'Bài 18',
+            'N5-19': 'Bài 19',
+            'N5-20': 'Bài 20',
+            'N5-21': 'Bài 21',
+            'N5-22': 'Bài 22',
+            'N5-23': 'Bài 23',
+            'N5-24': 'Bài 24',
+            'N5-25': 'Bài 25',
+            'body': 'Cơ thể',
+            'family': 'Gia đình',
+            'numbers': 'Số đếm',
+            'food': 'Món ăn',
+            'greetings': 'Chào hỏi'
+        };
+
+        function openFlashcard() {
+            playClickSound();
+            // Filter theo topic đã chọn
+            if (selectedTopic === 'all') {
+                flashcardDeck = [...vocabulary];
+            } else if (selectedTopic === 'N5') {
+                // Chọn tất cả từ vựng N5 (từ N5-1 đến N5-25)
+                flashcardDeck = vocabulary.filter(v => v.topic.startsWith('N5'));
+            } else {
+                flashcardDeck = vocabulary.filter(v => v.topic === selectedTopic);
+            }
+
+            flashcardIndex = 0;
+            document.getElementById('flashcard-total').innerText = flashcardDeck.length;
+
+            switchScreen('flashcard-screen');
+            displayFlashcard();
+        }
+
+        function displayFlashcard() {
+            if (flashcardDeck.length === 0) return;
+
+            const card = flashcardDeck[flashcardIndex];
+
+            // Reset flip
+            const flashcardEl = document.querySelector('.flashcard');
+            flashcardEl.style.transform = 'rotateY(0deg)';
+
+            // Update content
+            document.getElementById('fc-japanese').innerText = card.jap;
+            document.getElementById('fc-romaji').innerText = `(${card.romaji})`;
+            document.getElementById('fc-vietnamese').innerText = card.viet;
+            document.getElementById('fc-topic').innerText = topicNames[card.topic] || card.topic;
+            document.getElementById('flashcard-index').innerText = flashcardIndex + 1;
+
+            // Đọc từ tiếng Nhật
+            speakJapanese(card.jap);
+        }
+
+        function speakCurrentCard() {
+            playClickSound();
+            if (flashcardDeck.length === 0) return;
+            const card = flashcardDeck[flashcardIndex];
+            speakJapanese(card.jap);
+        }
+
+        function flipCard(element) {
+            playClickSound();
+            const currentRotation = element.style.transform;
+            if (currentRotation === 'rotateY(180deg)') {
+                element.style.transform = 'rotateY(0deg)';
+            } else {
+                element.style.transform = 'rotateY(180deg)';
+            }
+        }
+
+        function nextCard() {
+            playClickSound();
+            if (flashcardIndex < flashcardDeck.length - 1) {
+                flashcardIndex++;
+                displayFlashcard();
+            }
+        }
+
+        function prevCard() {
+            playClickSound();
+            if (flashcardIndex > 0) {
+                flashcardIndex--;
+                displayFlashcard();
+            }
+        }
+
+        function shuffleCards() {
+            playClickSound();
+            flashcardDeck = flashcardDeck.sort(() => 0.5 - Math.random());
+            flashcardIndex = 0;
+            displayFlashcard();
+        }
+    </script>
+</body>
+
+</html>
